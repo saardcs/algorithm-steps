@@ -1,56 +1,65 @@
 import streamlit as st
 
-# Initialize the session state for command list and index
+# Initialize session state for commands and index
 if 'commands' not in st.session_state:
     st.session_state.commands = []
 if 'index' not in st.session_state:
     st.session_state.index = 0
 
-# Title and description
+# Title and instructions
 st.title('Algorithm Command List')
-st.write("Create an algorithm, type in the commands, and volunteers will try to execute them.")
+st.markdown("""
+    Enter algorithm steps in the input box, and volunteers will try to execute each one.
+    You can add, remove, and navigate through the list of commands below.
+""")
 
 # Command input field
-command_input = st.text_input('Enter a command')
+command_input = st.text_input('Enter a new command')
 
 # Add command button
 if st.button('Add Command'):
     if command_input:
         st.session_state.commands.append(command_input)
-        st.session_state.index = 0  # Reset to show the first command
-        st.success(f'Command "{command_input}" added to the list!')
+        st.session_state.index = len(st.session_state.commands) - 1  # Go to the last command
+        st.success(f'Command "{command_input}" added!')
     else:
-        st.warning('Please enter a valid command.')
+        st.warning('Please enter a command.')
 
 # Display the current list of commands
 st.subheader('Commands List:')
-for idx, command in enumerate(st.session_state.commands):
-    st.write(f'{idx + 1}. {command}')
+if st.session_state.commands:
+    st.write("\n".join([f"{idx + 1}. {cmd}" for idx, cmd in enumerate(st.session_state.commands)]))
+else:
+    st.write("No commands yet! Please add some above.")
 
-# Show the current command (one by one)
+# Show current command (if any)
 if st.session_state.commands:
     st.subheader('Current Command:')
     st.write(st.session_state.commands[st.session_state.index])
 
-    # Next command button
-    if st.button('Next Command') and st.session_state.index < len(st.session_state.commands) - 1:
-        st.session_state.index += 1
+    # Buttons for navigation
+    col1, col2, col3 = st.columns([1, 2, 1])  # Split the screen into columns for large buttons
+    with col1:
+        if st.button('Previous Command', key='prev'):
+            if st.session_state.index > 0:
+                st.session_state.index -= 1
+    with col2:
+        if st.button('Next Command', key='next'):
+            if st.session_state.index < len(st.session_state.commands) - 1:
+                st.session_state.index += 1
+    with col3:
+        if st.button('Clear All Commands', key='clear'):
+            st.session_state.commands.clear()
+            st.session_state.index = 0
+            st.success('All commands cleared.')
 
-    # Previous command button
-    if st.button('Previous Command') and st.session_state.index > 0:
-        st.session_state.index -= 1
+    # Command removal (only show if there are commands)
+    if len(st.session_state.commands) > 1:
+        command_to_remove = st.selectbox('Select a command to remove', st.session_state.commands)
+        if st.button('Remove Selected Command'):
+            st.session_state.commands.remove(command_to_remove)
+            st.session_state.index = min(st.session_state.index, len(st.session_state.commands) - 1)  # Stay within range
+            st.success(f'Command "{command_to_remove}" removed.')
+
 else:
-    st.write("No commands in the list yet. Add some commands above.")
-
-# Option to clear the command list
-if st.button('Clear All Commands'):
-    st.session_state.commands.clear()
-    st.session_state.index = 0
-    st.success('All commands cleared.')
-
-# Option to remove a specific command from the list
-command_to_remove = st.selectbox('Select a command to remove', options=st.session_state.commands, index=-1)
-if st.button('Remove Selected Command') and command_to_remove:
-    st.session_state.commands.remove(command_to_remove)
-    st.session_state.index = 0  # Reset to show the first command
-    st.success(f'Command "{command_to_remove}" removed from the list.')
+    st.write("Add some commands to get started!")
